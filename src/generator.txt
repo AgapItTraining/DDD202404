@@ -1,0 +1,147 @@
+@REM TODO: Function, Add some classes, transform into vsix
+
+
+cls
+@REM echo 'Show the last .NET Version in this machine'
+@REM dotnet --version
+@REM echo 'Presents all .NET SDKs in this machine'
+@REM dotnet --info 
+
+echo 'Setting variables'
+SET ClientName=MySolution
+SET ProjectName=MyProject
+SET ResourceName=MyApplicationType
+
+@REM |Blank for latest version |-f net5.0 |-f net6.0 |-f net7.0 
+@REM SET FrameworkVersion=-f net5.0 
+SET FrameworkVersion=-f net7.0 
+
+@REM |console |webapi |webapp |blazor |razor 
+SET ApplicationType=console  
+REM Function WithAPI
+Rem Function WithoutAPI
+
+
+@REM |Blank for mstest |mstest |xunit |nunit 
+SET TestsFramework=xunit
+
+
+SET AddDatabaseFeatures=1
+SET AddUnitTests=1
+SET CodeCoverage=1
+SET YamlGenerator=1
+
+
+rem Structure preparation
+echo 'Step 1 - Solution Preparation'
+SET SolutionName=%ClientName%_%ProjectName%_%ResourceName%
+rmdir /s src
+md src
+cd src
+dotnet new sln -n %SolutionName%
+
+rem Structure preparation
+echo 'Step 2 - Folder Creation'
+
+SET ApplicationFolder="1 - Application"
+SET ApplicationFolderDescription=Application layer: responsible for the main project, because that is where the API drivers and services will be developed. It has the function of receiving all requests and directing them to some service to perform a certain action
+md %ApplicationFolder%
+echo %ApplicationFolderDescription% >> %ApplicationFolder%\readme.md
+dotnet new %ApplicationType% %FrameworkVersion% -n %ProjectName%.Application -o %ApplicationFolder%\%ProjectName%.Application
+dotnet sln add %ApplicationFolder%\%ProjectName%.Application
+
+IF %AddUnitTests% EQU 1 (
+    dotnet new %TestsFramework% %FrameworkVersion% -n %ProjectName%.Application.Tests -o %ApplicationFolder%\%ProjectName%.Application.Tests
+    dotnet sln add %ApplicationFolder%\%ProjectName%.Application.Tests
+    dotnet add %ApplicationFolder%\%ProjectName%.Application.Tests reference %ApplicationFolder%\%ProjectName%.Application
+)
+
+
+@REM func init %ApplicationFolder%\%ProjectName%.Application --dotnet --force
+@REM dotnet sln add %ApplicationFolder%\%ProjectName%.Application
+
+
+SET DomainFolder="2 - Domain"
+SET DomainFolderDescription=Domain layer: responsible for implementing classes/models, which will be mapped to the database, in addition to obtaining the declarations of interfaces, constants, DTOs (Data Transfer Object) and enums
+md %DomainFolder%
+echo %DomainFolderDescription% >> %DomainFolder%\readme.md
+dotnet new classlib %FrameworkVersion% -n %ProjectName%.Domain -o %DomainFolder%\%ProjectName%.Domain
+dotnet sln add %DomainFolder%\%ProjectName%.Domain
+
+IF %AddUnitTests% EQU 1 (
+    dotnet new %TestsFramework% %FrameworkVersion% -n %ProjectName%.Domain.Tests -o %DomainFolder%\%ProjectName%.Domain.Tests
+    dotnet sln add %DomainFolder%\%ProjectName%.Domain.Tests
+    dotnet add %DomainFolder%\%ProjectName%.Domain.Tests reference %DomainFolder%\%ProjectName%.Domain
+)
+
+
+SET ServiceFolder="3 - Service"
+SET ServiceFolderDescription=Service layer: it would be the 'heart' of the project, because it is in it that all business rules and validations are done, before the data persists in the database
+md %ServiceFolder%
+echo %ServiceFolderDescription% >> %ServiceFolder%\readme.md
+dotnet new classlib -n %ProjectName%.Service -o %ServiceFolder%\%ProjectName%.Service
+dotnet sln add %ServiceFolder%\%ProjectName%.Service
+
+IF %AddUnitTests% EQU 1 (
+    dotnet new %TestsFramework% %FrameworkVersion% -n %ProjectName%.Service.Tests -o %ServiceFolder%\%ProjectName%.Service.Tests
+    dotnet sln add %ServiceFolder%\%ProjectName%.Service.Tests
+    dotnet add %ServiceFolder%\%ProjectName%.Service.Tests reference %ServiceFolder%\%ProjectName%.Service
+)
+
+
+SET InfraFolder="4 - Infra"
+md %InfraFolder%
+SET InfraFolderData="4.1 - Data"
+SET InfraFolderDataDescription=Data: Performs persistence with the database, using or not, some ORM.
+md %InfraFolder%\%InfraFolderData%
+echo %InfraFolderDataDescription% >> %InfraFolder%\%InfraFolderData%\readme.md
+dotnet new classlib -n %ProjectName%.Infra.Data -o "4 - Infra\4.1 - Data\%ProjectName%.Infra.Data"
+dotnet sln add "4 - Infra\4.1 - Data\%ProjectName%.Infra.Data"
+
+IF %AddUnitTests% EQU 1 (
+    dotnet new %TestsFramework% %FrameworkVersion% -n %ProjectName%.Infra.Data.Tests -o "4 - Infra\4.1 - Data\%ProjectName%.Infra.Data".Tests
+    dotnet sln add "4 - Infra\4.1 - Data\%ProjectName%.Infra.Data".Tests
+    dotnet add "4 - Infra\4.1 - Data\%ProjectName%.Infra.Data".Tests reference "4 - Infra\4.1 - Data\%ProjectName%.Infra.Data"
+)
+
+
+SET InfraFolderCrossCutting="4.2 - CrossCutting"
+SET InfraFolderCrossCuttingDescription=Cross-Cutting: A part layer that does not obey the layer hierarchy. As its name says, this layer crosses the entire hierarchy. Contains features that can be used anywhere in code, such as validation, external API consumption, and use of some security.
+md %InfraFolder%\%InfraFolderCrossCutting%
+echo %InfraFolderCrossCuttingDescription% >> %InfraFolder%\%InfraFolderCrossCutting%\readme.md
+dotnet new classlib -n %ProjectName%.Infra.CrossCutting -o "4 - Infra\4.2 - CrossCutting\%ProjectName%.Infra.CrossCutting"
+dotnet sln add "4 - Infra\4.2 - CrossCutting\%ProjectName%.Infra.CrossCutting"
+
+IF %AddUnitTests% EQU 1 (
+    dotnet new %TestsFramework% %FrameworkVersion% -n %ProjectName%.Infra.CrossCutting.Tests -o "4 - Infra\4.2 - CrossCutting\%ProjectName%.Infra.CrossCutting".Tests
+    dotnet sln add "4 - Infra\4.2 - CrossCutting\%ProjectName%.Infra.CrossCutting".Tests
+    dotnet add "4 - Infra\4.2 - CrossCutting\%ProjectName%.Infra.CrossCutting".Tests reference "4 - Infra\4.2 - CrossCutting\%ProjectName%.Infra.CrossCutting"
+)
+
+rem Project Referencing
+rem ApplicationLayer: Service and Domain
+dotnet add %ApplicationFolder%\%ProjectName%.Application reference %DomainFolder%\%ProjectName%.Domain
+dotnet add %ApplicationFolder%\%ProjectName%.Application reference %ServiceFolder%\%ProjectName%.Service
+rem ServiceLayer: Domain and Infrastructure
+dotnet add %ServiceFolder%\%ProjectName%.Service reference %DomainFolder%\%ProjectName%.Domain
+dotnet add %ServiceFolder%\%ProjectName%.Service reference "4 - Infra\4.1 - Data\%ProjectName%.Infra.Data"
+dotnet add %ServiceFolder%\%ProjectName%.Service reference "4 - Infra\4.2 - CrossCutting\%ProjectName%.Infra.CrossCutting"
+rem InfrastructureLayer: Domain
+dotnet add "4 - Infra\4.1 - Data\%ProjectName%.Infra.Data" reference %DomainFolder%\%ProjectName%.Domain
+
+
+
+
+
+IF %CodeCoverage% EQU 1 (
+    dotnet tool install --global coverlet.console
+    dotnet test %SolutionName%.sln --collect:"XPlat Code Coverage"
+)
+
+IF %YamlGenerator% EQU 1 (
+    SET YamlDefinition=dotnet restore dotnet build dotnet test
+    echo %YamlDefinition% >> %SolutionName%_CICD.yaml
+)
+
+cd ..\..
+echo 'Solution Generated successfully'
