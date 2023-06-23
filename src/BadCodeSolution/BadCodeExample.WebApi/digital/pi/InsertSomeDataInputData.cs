@@ -6,6 +6,11 @@ namespace DigitalServices.digital.pi
 {
 	public class InsertSomeDataInputData : GenericInputData
 	{
+		public string Name { get; set; }
+
+
+
+
 		public List<SomeEntity> someEntities { get; set; }
 
 		public override void validate()
@@ -16,6 +21,7 @@ namespace DigitalServices.digital.pi
 			}
 		}
 
+		
 
 		private void validateSomeEntity(SomeEntity someEntity)
 		{
